@@ -1,0 +1,43 @@
+import socket
+import threading
+
+def handle_client(client_socket):
+    # Receive data from the client
+    request_data = client_socket.recv(1024)
+    print("[*] Received from client:", request_data)
+
+    # Forward the data to the remote server
+    remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    remote_socket.connect(('www.example.com', 80))
+    remote_socket.send(request_data)
+
+    # Receive the response from the remote server
+    remote_data = remote_socket.recv(1024)
+    print("[*] Received from remote server:", remote_data)
+
+    # Send the response back to the client
+    client_socket.send(remote_data)
+
+    # Close the connections
+    remote_socket.close()
+    client_socket.close()
+
+def start_proxy():
+    # Create a server socket
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(('127.0.0.1', 8080))
+    server.listen(5)
+
+    print("[*] Listening on 127.0.0.1:8080")
+
+    while True:
+        # Accept client connections
+        client_socket, addr = server.accept()
+        print("[*] Accepted connection from:", addr)
+
+        # Create a new thread to handle the client
+        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+        client_handler.start()
+
+if __name__ == "__main__":
+    start_proxy()
